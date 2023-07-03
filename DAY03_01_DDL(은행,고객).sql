@@ -7,7 +7,7 @@
         1)CREATE   : 생성
         2)ALTER    : 수정
         3)DROP     : 삭제
-        4)TRUNCATE : 삭제(내용만 삭제)
+        4)TRUNCATE : 삭제(내용(입력된 데이터)만 삭제)
 */
 
 DROP TABLE CUSTOMER_TBL;
@@ -31,7 +31,7 @@ CREATE TABLE CUSTOMER_TBL(
 );
 
 /*
-    테이블 수정하기
+    테이블 수정하기(ALTER 문)
     1.칼럼을 추가하는 것 : ALTER TABLE 테이블명 ADD 칼럼명 데이터타입 [제약조건]
     2.칼럼을 수정하는 것 : ALTER TABLE 테이블명 MODIFY 칼럼명 데이터타입 [제약조건]
     3.칼럼을 삭제하는 것 : ALTER TABLE 테이블명 DROP COLUMN 칼럼명
