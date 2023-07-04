@@ -96,6 +96,7 @@ INSERT INTO LECTURE_TBL VALUES (LECT_SEQ.NEXTVAL, 55, 3, '교양실습', '미래
 
 COMMIT;
 
+--INSERT INTO 작성시 칼럼명은 생략하지않고 작성한다.
 
 
 
