@@ -95,18 +95,23 @@ SELECT USER_NO, USER_ID, USER_MOBILE1, USER_MOBILE2
 SELECT USER_NO, USER_ID, USER_MOBILE1, USER_MOBILE2
   FROM USER_T
  WHERE USER_MOBILE2 LIKE CONCAT(5,'%'); 
+-- 풀이  WHERE USER_MOBILE2 LIKE '5%'; 
+
 
 -- 3. 2010년 이후에 가입한 사용자의 사용자번호, 아이디, 가입일을 조회하시오.
 SELECT USER_NO, USER_ID, USER_REGDATE
   FROM USER_T
  WHERE SUBSTR(USER_REGDATE,1,2) >= 10; 
+-- 풀이 WHERE EXTRACT(YEAR FROM USER_REGDATE) >= 2010;
+
 
 -- 4. 사용자번호와 연락처1, 연락처2를 연결하여 조회하시오. 연락처가 없는 경우 NULL 대신 'None'으로 조회하시오.
-SELECT USER_NO,USER_MOBILE1, USER_MOBILE2, USER_MOBILE1 || USER_MOBILE2 AS 연락처
+SELECT USER_NO, NVL(CONCAT(USER_MOBILE1, USER_MOBILE2), 'NONE')
   FROM USER_T;
 
 -- 5. 지역별 사용자수를 조회하시오.
-SELECT USER_ADDR, COUNT(*)
+SELECT USER_ADDR AS 주소
+     , COUNT(*) AS 사용자수
   FROM USER_T
  GROUP BY USER_ADDR;
 -- 주소   사용자수
@@ -118,9 +123,10 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 6. '서울', '경기'를 제외한 지역별 사용자수를 조회하시오.
-SELECT USER_ADDR, COUNT(*)
+SELECT USER_ADDR AS 주소
+     , COUNT(*) AS 사용자수
   FROM USER_T
- WHERE USER_ADDR != '서울' 
+ WHERE USER_ADDR != '서울' AND USER_ADDR != '경기'  -- WHERE USER_ADDR NOT IN('서울', '경기')
  GROUP BY USER_ADDR;
 -- 주소   사용자수
 -- 경북   1
@@ -128,7 +134,13 @@ SELECT USER_ADDR, COUNT(*)
 -- 충남   1
 
 
--- 7. 구매내역이 없는 사용자를 조회하시오.
+-- 7. 구매내역이 없는 사용자를 조회하시오. (다중테이블처리방식 : 조인,서브쿼리) -- 서브쿼리로 풀이
+SELECT USER_NO AS 번호
+     , USER_ID AS 사용자수
+  FROM USER_T
+ WHERE USER_NO NOT IN(SELECT USER_NO
+                        FROM BUY_T);                        
+     
 -- 번호  아이디
 -- 6     HNS
 -- 1     YJS
@@ -137,7 +149,13 @@ SELECT USER_ADDR, COUNT(*)
 -- 9     LKK
 
 
--- 8. 카테고리별 구매횟수를 조회하시오.
+-- 8. 카테고리별 구매횟수를 조회하시오.  -- 카테고리로 그룹핑
+SELECT P.PROD_CATEGORY AS 카테고리
+     , COUNT(B.BUY_NO) AS 구매횟수  -- BUY테이블 기본키로 갯수조회
+  FROM PRODUCT_T P INNER JOIN BUY_T B
+    ON P.PROD_CODE = B.PROD_CODE
+ GROUP BY P.PROD_CATEGORY;
+     
 -- 카테고리  구매횟수
 -- 전자      4
 -- 신발      2
@@ -146,6 +164,11 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 9. 아이디별 구매횟수를 조회하시오.
+SELECT U.USER_ID AS 아이디
+     , COUNT(B.BUY_NO) AS 구매횟수
+  FROM USER_T U INNER JOIN BUY_T B
+    ON U.USER_NO = B.USER_NO
+ GROUP BY U.USER_ID;
 -- 아이디  구매횟수
 -- KHD     3
 -- LHJ     2
@@ -155,6 +178,13 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 10. 아이디별 구매횟수를 조회하시오. 구매 이력이 없는 경우 구매횟수는 0으로 조회하고 아이디의 오름차순으로 조회하시오.
+SELECT U.USER_ID AS 아이디
+     , U.USER_NAME AS 고객명
+     , COUNT(B.BUY_NO) AS 구매횟수
+  FROM USER_T U LEFT OUTER JOIN BUY_T B
+    ON U.USER_NO = B.USER_NO
+  GROUP BY U.USER_ID, U.USER_NAME  --SELECT문의 칼럼과 동일하게입력
+  ORDER BY U.USER_ID ASC;
 -- 아이디  고객명  구매횟수
 -- KHD     강호동  3
 -- KJD     김제동  1
@@ -169,7 +199,15 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 11. 카테고리가 '전자'인 제품을 구매한 고객의 구매내역을 조회하시오.
--- 고객명  제품명  구매액
+SELECT U.USER_NAME AS 고객명
+     , P.PROD_NAME AS 제품명
+     , P.PROD_PRICE * B.BUY_AMOUNT AS 구매액
+  FROM USER_T U INNER JOIN BUY_T B
+    ON U.USER_NO = B.USER_NO INNER JOIN PRODUCT_T P
+    ON P.PROD_CODE = B.PROD_CODE
+ WHERE P.PROD_CATEGORY = '전자';    
+   
+-- 고객명  제품명  구매액  --단가*구매수량
 -- 강호동  노트북  1000
 -- 김용만  모니터  200
 -- 박수홍  모니터  1000
@@ -177,17 +215,30 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 12. 모든 제품의 제품명과 판매횟수를 조회하시오. 판매 이력이 없는 제품은 0으로 조회하시오.
+SELECT P.PROD_NAME AS 제품명
+     , CONCAT(COUNT(B.BUY_NO), '개') AS 판매횟수
+  FROM PRODUCT_T P LEFT OUTER JOIN BUY_T B
+    ON P.PROD_CODE = B.PROD_CODE
+ GROUP BY P.PROD_CODE, P.PROD_NAME;  -- 코드와 이름이 모두 동일한 데이터를 그룹핑
 -- 제품명  판매횟수
 -- 메모리  1개
 -- 운동화  2개
 -- 청바지  2개
 -- 노트북  1개
 -- 모니터  2개
--- 책      1개
+-- 책      2개
 -- 벨트    0개
 
 
 -- 13. 제품을 구매한 이력이 있는 고객의 아이디, 고객명, 구매횟수, 총구매액을 조회하시오.
+SELECT U.USER_ID AS 아이디
+     , U.USER_NAME AS 고객명
+     , COUNT(B.BUY_NO) AS 구매횟수
+     , SUM(P.PROD_PRICE * BUY_AMOUNT) AS 총구매액
+  FROM USER_T U INNER JOIN BUY_T B
+    ON U.USER_NO = B.USER_NO INNER JOIN PRODUCT_T P
+    ON P.PROD_CODE = B.PROD_CODE
+ GROUP BY U.USER_ID, U.USER_NAME;
 -- 아이디  고객명  구매횟수  총구매액
 -- PSH     박수홍  3         1860
 -- KYM     김용만  1         200
@@ -197,6 +248,13 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 14. 구매횟수가 2회 이상인 고객명과 구매횟수를 조회하시오.
+SELECT U.USER_NAME AS 고객명
+     , COUNT(B.BUY_NO) AS 구매횟수
+  FROM USER_T U INNER JOIN BUY_T B
+    ON U.USER_NO = B.USER_NO
+ GROUP BY  U.USER_NO, U.USER_NAME  --식별이 가능한 칼럼을 꼭 추가
+HAVING COUNT(B.BUY_NO) >= 2
+ ORDER BY U.USER_NAME DESC;
 -- 고객명  구매횟수
 -- 이휘재  2
 -- 박수홍  3
@@ -204,6 +262,13 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 15. 어떤 고객이 어떤 제품을 구매했는지 조회하시오. 구매 이력이 없는 고객도 조회하고 아이디로 오름차순 정렬하시오.
+SELECT U.USER_NAME AS 고객명
+     , P.PROD_NAME AS 구매제품
+  FROM USER_T U LEFT OUTER JOIN BUY_T B
+    ON U.USER_NO = B.USER_NO LEFT OUTER JOIN PRODUCT_T P
+    ON P.PROD_CODE = B.PROD_CODE
+ ORDER BY U.USER_ID ASC;
+     
 -- 고객명   구매제품
 -- 강호동   운동화
 -- 강호동   청바지
@@ -223,15 +288,57 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 16. 제품 테이블에서 제품명이 '책'인 제품의 카테고리를 '서적'으로 수정하시오.
+UPDATE PRODUCT_T
+   SET PROD_CATEGORY = '서적'
+ WHERE PROD_NAME = '책';
+COMMIT;
 
 
 -- 17. 연락처1이 '011'인 사용자의 연락처1을 모두 '010'으로 수정하시오.
+UPDATE USER_T
+   SET USER_MOBILE1 = '010'
+ WHERE USER_MOBILE1 = '011';
+COMMIT;
 
 
 -- 18. 구매번호가 가장 큰 구매내역을 삭제하시오.
+DELETE 
+  FROM BUY_T
+ WHERE BUY_NO = (SELECT MAX(BUY_NO)
+                   FROM BUY_T);
+COMMIT;
 
-
+-- 시퀀스를 사용하였으나 INSERT 자체가 실패한 경우 가장 큰 구매번호와 CURRVAL 값은 다르다.
+/* DELETE 
+     FROM BUY_T
+    WHERE BUY_NO = (SELECT BUY_SEQ.CURRVAL  -- CURRVAL : 조회하려면 이전에 NEXTVAL 사용내역이 있어야함  현재번호확인
+                      FROM DUAL);
+*/
 -- 19. 제품코드가 1인 제품을 삭제하시오. 삭제 이후 제품번호가 1인 제품의 구매내역이 어떻게 변하는지 조회하시오.
 
+-- 삭제전 구매내역
+SELECT *
+  FROM BUY_T;
+  
+-- 삭제
+DELETE FROM PRODUCT_T WHERE PROD_CODE = 1;
+
+-- 삭제 후 구매내역
+SELECT *
+  FROM BUY_T;
 
 -- 20. 사용자번호가 5인 사용자를 삭제하시오. 사용자번호가 5인 사용자의 구매 내역을 먼저 삭제한 뒤 진행하시오.
+
+--구매내역 먼저 지우기
+DELETE 
+  FROM BUY_T
+ WHERE USER_NO = 5;
+ 
+--사용자번호 5번 지우기 
+DELETE 
+  FROM USER_T
+ WHERE USER_NO = 5;
+ 
+-- 작업이 여려개일때는 맨 마지막뒤에 COMMIT 
+COMMIT;
+ 

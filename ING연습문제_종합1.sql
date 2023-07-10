@@ -129,6 +129,8 @@ SELECT USER_ADDR, COUNT(*)
 
 
 -- 7. 구매내역이 없는 사용자를 조회하시오.
+SELECT USER_NO, USER_ID
+FROM 
 -- 번호  아이디
 -- 6     HNS
 -- 1     YJS

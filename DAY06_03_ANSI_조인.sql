@@ -26,9 +26,9 @@
 -- 내부 조인
 
 -- 1. 사원번호, 사원명, 부서번호, 부서명을 조회하시오
-SELECT EMPLOYEE_ID
-     , FIRST_NAME
-     , LAST_NAME
+SELECT E.EMPLOYEE_ID
+     , E.FIRST_NAME
+     , E.LAST_NAME
      , D.DEPARTMENT_ID  -- 2개의 테이블에 모두 있는 칼럼(이름이 같은 칼럼)은 반드시 테이블(오너)명시해야 한다.
      , DEPARTMENT_NAME
   FROM DEPARTMENTS D INNER JOIN EMPLOYEES E  -- FROM 1 : M
