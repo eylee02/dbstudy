@@ -347,15 +347,7 @@ SELECT C.CUST_NAME AS 고객명
 -- 박세리  0          0
 
 
--- 20. 총구매액이 2~3위인 고객의 이름와 총구매액을 조회하시오.
-SELECT C.CUST_NAME AS 고객명
-     , SUM(B.PRICE * O.AMOUNT) AS 총구매액
-  FROM (SELECT RANK() OVER(ORDER BY(B.PRICE * O.AMOUNT)) AS 구매순위
-          FROM BOOK_T B INNER JOIN ORDER_T O
-            ON B.BOOK_ID = O.BOOK_ID INNER JOIN CUSTOMER_T C
-            ON C.CUST_ID = O.CUST_ID)
- WHERE 구매순위 BETWEEN 2 AND 3
- GROUP BY C.CUST_ID, C.CUST_NAME;
+-- 20. 총구매액이 2~3위인 고객의 이름와 총구매액을 조회하시오.(인라인뷰 사용)
  
 SELECT A.CUST_NAME AS 고객명
      , A.TOTAL AS 총구매액
